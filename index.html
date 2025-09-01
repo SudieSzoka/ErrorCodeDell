@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>错误代码处理器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .neumorphism-container {
+            background: linear-gradient(145deg, #e6e6e6, #ffffff);
+            box-shadow: 20px 20px 60px #d9d9d9, -20px -20px 60px #ffffff;
+        }
+        .neumorphism-inset {
+            background: linear-gradient(145deg, #ffffff, #e6e6e6);
+            box-shadow: inset 20px 20px 60px #d9d9d9, inset -20px -20px 60px #ffffff;
+        }
+        .neumorphism-button {
+            background: linear-gradient(145deg, #e6e6e6, #ffffff);
+            box-shadow: 5px 5px 15px #d9d9d9, -5px -5px 15px #ffffff;
+            transition: all 0.3s ease;
+        }
+        .neumorphism-button:hover {
+            box-shadow: 2px 2px 8px #d9d9d9, -2px -2px 8px #ffffff;
+        }
+        .neumorphism-button:active {
+            box-shadow: inset 2px 2px 8px #d9d9d9, inset -2px -2px 8px #ffffff;
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300">
+    <div class="container mx-auto px-6 py-12">
+        <!-- 标题 -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-gray-800 mb-4">错误代码处理器</h1>
+            <p class="text-gray-600 text-lg">将错误代码文本转换为结构化表格</p>
+        </div>
+
+        <!-- 输入区域 -->
+        <div class="neumorphism-container rounded-3xl p-8 mb-8">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
+                <svg class="w-6 h-6 mr-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                输入错误代码文本
+            </h2>
+            <div class="neumorphism-inset rounded-2xl p-4">
+                <textarea 
+                    id="inputText" 
+                    class="w-full h-48 bg-transparent text-gray-700 placeholder-gray-400 resize-none focus:outline-none text-sm font-mono leading-relaxed"
+                    placeholder="请在此粘贴错误代码文本，例如：&#10;HERO_TALENT_INVALID_TYPE(6501, &quot;无效的天赋类型&quot;), &#10;HERO_TALENT_SLOT_NOT_UNLOCKED(6502, &quot;天赋槽位未解锁&quot;), &#10;..."
+                    oninput="handleTextInput()"
+                >HERO_TALENT_INVALID_TYPE(6501, "无效的天赋类型"), HERO_TALENT_SLOT_NOT_UNLOCKED(6502, "天赋槽位未解锁"), HERO_TALENT_SLOT_LOCKED(6503, "天赋槽位已锁定"), HERO_TALENT_LOCK_LIMIT_EXCEEDED(6504, "天赋锁定数量超限"), HERO_TALENT_INVALID_SLOT_INDEX(6505, "无效的槽位索引")</textarea>
+            </div>
+            <div class="flex justify-center mt-6">
+                <button 
+                    id="processBtn" 
+                    class="neumorphism-button px-8 py-4 rounded-2xl text-gray-700 font-semibold hover:text-gray-800 transition-colors duration-300 flex items-center space-x-3"
+                    onclick="processText()"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    <span>处理文本</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 结果区域 -->
+        <div id="resultSection" class="neumorphism-container rounded-3xl p-8 hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-semibold text-gray-800 flex items-center">
+                    <svg class="w-6 h-6 mr-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path>
+                    </svg>
+                    处理结果
+                </h2>
+                <button 
+                    id="copyBtn" 
+                    class="neumorphism-button px-6 py-3 rounded-xl text-gray-700 font-medium hover:text-gray-800 transition-colors duration-300 flex items-center space-x-2"
+                    onclick="copyTable()"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                    <span>复制表格</span>
+                </button>
+            </div>
+            
+            <div class="neumorphism-inset rounded-2xl p-6 overflow-x-auto">
+                <table id="resultTable" class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b-2 border-gray-300">
+                            <th class="text-left py-4 px-4 font-semibold text-gray-700 bg-gradient-to-r from-blue-50 to-blue-100 rounded-tl-xl">错误代码</th>
+                            <th class="text-left py-4 px-4 font-semibold text-gray-700 bg-gradient-to-r from-blue-50 to-blue-100">错误描述</th>
+                            <th class="text-left py-4 px-4 font-semibold text-gray-700 bg-gradient-to-r from-blue-50 to-blue-100">备注</th>
+                            <th class="text-left py-4 px-4 font-semibold text-gray-700 bg-gradient-to-r from-blue-50 to-blue-100 rounded-tr-xl">原始文本</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- 动态生成的内容 -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-6 text-center">
+                <p class="text-gray-600 text-sm">
+                    <span id="recordCount">0</span> 条记录已处理
+                </p>
+            </div>
+        </div>
+
+        <!-- 提示信息 -->
+        <div id="notification" class="fixed top-6 right-6 glass-effect px-6 py-4 rounded-2xl text-white font-medium transform translate-x-full transition-transform duration-300 ease-in-out">
+            <div class="flex items-center space-x-3">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span id="notificationText">操作成功</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let lastProcessedText = '';
+
+        function handleTextInput() {
+            const input = document.getElementById('inputText').value.trim();
+            
+            // 如果文本发生变化且不为空，自动处理
+            if (input !== lastProcessedText && input) {
+                lastProcessedText = input;
+                // 使用短暂延迟避免频繁处理
+                setTimeout(() => {
+                    if (document.getElementById('inputText').value.trim() === input) {
+                        processText();
+                    }
+                }, 300);
+            }
+        }
+
+        function processText() {
+            const input = document.getElementById('inputText').value.trim();
+            if (!input) {
+                showNotification('请输入要处理的文本', 'error');
+                return;
+            }
+
+            // 解析文本
+            const results = parseErrorCodes(input);
+            
+            if (results.length === 0) {
+                showNotification('未找到有效的错误代码格式', 'error');
+                return;
+            }
+
+            // 生成表格
+            generateTable(results);
+            
+            // 显示结果区域
+            document.getElementById('resultSection').classList.remove('hidden');
+            document.getElementById('recordCount').textContent = results.length;
+            
+            showNotification(`成功处理 ${results.length} 条记录`, 'success');
+        }
+
+        function parseErrorCodes(text) {
+            const results = [];
+            
+            // 匹配模式：CONSTANT_NAME(code, "description")
+            const pattern = /([A-Z_]+)\((\d+),\s*"([^"]+)"\)/g;
+            let match;
+            
+            while ((match = pattern.exec(text)) !== null) {
+                const [fullMatch, constantName, code, description] = match;
+                results.push({
+                    errorCode: `error_${code}`,
+                    description: description,
+                    note: '', // 第三列为空
+                    original: fullMatch
+                });
+            }
+            
+            return results;
+        }
+
+        function generateTable(data) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            data.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.className = `hover:bg-gray-50 transition-colors duration-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`;
+                
+                row.innerHTML = `
+                    <td class="py-4 px-4 font-mono text-blue-600 font-medium">${item.errorCode}</td>
+                    <td class="py-4 px-4 text-gray-700">${item.description}</td>
+                    <td class="py-4 px-4 text-gray-500"></td>
+                    <td class="py-4 px-4 font-mono text-xs text-gray-600 max-w-xs truncate" title="${item.original}">${item.original}</td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+
+        function copyTable() {
+            const tbody = document.getElementById('tableBody');
+            const rows = tbody.querySelectorAll('tr');
+            let csvContent = '';
+            
+            rows.forEach((row) => {
+                const cells = row.querySelectorAll('td');
+                const rowData = Array.from(cells).map(cell => {
+                    let text = cell.textContent.trim();
+                    // 如果包含逗号或引号，需要用引号包围并转义内部引号
+                    if (text.includes(',') || text.includes('"')) {
+                        text = '"' + text.replace(/"/g, '""') + '"';
+                    }
+                    return text;
+                }).join('\t');
+                csvContent += rowData + '\n';
+            });
+            
+            navigator.clipboard.writeText(csvContent).then(() => {
+                showNotification('表格内容已复制到剪贴板', 'success');
+            }).catch(() => {
+                showNotification('复制失败，请手动选择表格内容', 'error');
+            });
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notificationText');
+            
+            notificationText.textContent = message;
+            
+            if (type === 'error') {
+                notification.className = notification.className.replace('glass-effect', 'bg-red-500');
+            } else {
+                notification.className = notification.className.replace('bg-red-500', 'glass-effect');
+                notification.style.background = 'linear-gradient(135deg, rgba(34, 197, 94, 0.8), rgba(16, 185, 129, 0.8))';
+            }
+            
+            // 显示通知
+            notification.classList.remove('translate-x-full');
+            
+            // 3秒后隐藏
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+            }, 3000);
+        }
+
+        // 自动处理预填充的文本
+        document.addEventListener('DOMContentLoaded', function() {
+            processText();
+        });
+    </script>
+</body>
+</html>
